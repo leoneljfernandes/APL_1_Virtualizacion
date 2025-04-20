@@ -1,0 +1,33 @@
+{
+  "fechas": {
+    "2025/04/01": {
+      "Sur": {
+        "Max": 5.9,
+        "Min": 5.9,
+        "Promedio": 5.9
+      }
+    },
+    "2025/04/02": {
+      "Oeste": {
+        "Max": 22.9,
+        "Min": 22.9,
+        "Promedio": 22.9
+      },
+      "Norte": {
+        "Max": 80.0,
+        "Min": 15.4,
+        "Promedio": 47.7
+      },
+      "Este": {
+        "Max": 8.1,
+        "Min": 8.1,
+        "Promedio": 8.1
+      },
+      "Sur": {
+        "Max": 5.4,
+        "Min": 5.4,
+        "Promedio": 5.4
+      }
+    }
+  }
+}
