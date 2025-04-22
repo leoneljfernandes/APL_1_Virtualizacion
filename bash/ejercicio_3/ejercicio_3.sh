@@ -2,7 +2,7 @@
 
 function ayuda() {
     echo "Bienvenido al script contador de palabras."
-    echo "Puede optar por las siguientes opciones:"
+    echo "Debe especificar los siguientes argumentos:"
     echo "  -d, --directorio <directorio>   Especifica el directorio donde se contengan textos a analizar."
     echo "  -p, --palabras                  Lista de palabras a contar separadas por comas."   
     echo "  -a, --archivos                  Lista de extensiones de archivos a buscar separadas por comas."

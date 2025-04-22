@@ -1,5 +1,4 @@
 Param (
-    [Parameter(Mandatory=$true)]
     [string]$Directorio,
     [string]$Archivo,
     [switch]$Pantalla,

@@ -91,6 +91,51 @@ if [ "${#separador}" -ne 1 ]; then
     exit 1
 fi
 
+#Valido los separadores que no sean numeros o "-"
+if[[ "$separador" =~ ^[0-9]$ ]]; then
+    echo "Error: El separador no puede ser un número."
+    exit 1
+fi
+if[[ "$separador" =~ ^-$ ]]; then
+    echo "Error: El separador no puede ser un guion."
+    exit 1
+fi
+
+primer_fila_cols=$(head -n 1 "$matriz" | awk -F "$separador" '{print NF}')
+#Validamos que la matriz sea valida
+awk -F "$separador" -v sep="$separador" -v primer_fila_cols="$primer_fila_cols" '
+BEGIN {
+    fila = 0
+    error = 0
+}
+{
+    fila++
+    # Verificar número de columnas
+    if (NF != primer_fila_cols) {
+        print "Error: La fila " fila " tiene " NF " columnas, pero se esperaban " primer_fila_cols
+        error = 1
+        exit 1
+    }
+    
+    # Verificar valores numéricos
+    for (i=1; i<=NF; i++) {
+        # Permitimos números enteros y decimales, positivos y negativos
+        if ($i !~ /^-?[0-9]+([.][0-9]+)?$/) {
+            print "Error: Valor no numérico encontrado en fila " fila ", columna " i ": \"" $i "\""
+            error = 1
+            exit 1
+        }
+    }
+}
+END {
+    if (error) exit 1
+}' "$matriz"
+
+if [ $? -ne 0 ]; then
+    echo "Error: La matriz en el archivo $matriz no es válida."
+    exit 1
+fi
+
 
 # Procesar el archivo
 if [ -n "$producto" ]; then
