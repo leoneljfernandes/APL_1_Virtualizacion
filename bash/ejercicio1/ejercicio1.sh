@@ -55,9 +55,10 @@ do
     esac
 done
 
-#Validacion de exclusividad entre archivo de salida y pantalla
-if [ -n "$archivo" ] && [ -n "$pantalla" ]; then
-    echo "Error: No se puede especificar tanto un archivo de salida como una salida a pantalla."
+
+#verifico que se haya especificado un directorio
+if [ -z "$directorio" ]; then
+    echo "Error: No se ha especificado un directorio."
     exit 1
 fi
 
@@ -73,11 +74,44 @@ if [ ! -r "$directorio" ]; then
     exit 1
 fi
 
+if [ -z "$(ls -A "$directorio" 2>/dev/null)" ]; then
+    echo "Error: El directorio '$directorio' está vacío."
+    exit 1
+fi
+
+if [ -z "$archivo" ] && [ -n "$archivo" ]; then
+    echo "Error: No se especifico un archivo de salida."
+    exit 1
+fi
+
 #Verificamos si no se especifico un archivo de salida
 if [ -z "$archivo" ] && [ -z "$pantalla" ]; then
     echo "Error: No se ha especificado una salida (ni archivo ni pantalla)."
     exit 1
 fi
+
+if [ -n "$archivo"]; then
+    if [ -z "$archivo"]; then
+        echo "Error: No se ha especificado un archivo de salida."
+        exit 1
+    fi
+    
+    if [ ! -f "$archivo" ]; then
+        touch "$archivo" 2>/dev/null || {
+            echo "Error: No se pueden crear archivos en el directorio de destino o no se tienen permisos."
+            exit 1
+        }
+        rm "$archivo"  # Remove the test file
+    fi
+
+fi
+
+#Validacion de exclusividad entre archivo de salida y pantalla
+if [ -n "$archivo" ] && [ -n "$pantalla" ]; then
+    echo "Error: No se puede especificar tanto un archivo de salida como una salida a pantalla."
+    exit 1
+fi
+
 
 
 #Debug de salida

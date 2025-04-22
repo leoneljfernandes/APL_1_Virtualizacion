@@ -1,7 +1,50 @@
-Param (
+<#
+.SYNOPSIS
+Procesamiento de datos meteorológicos.
+
+.DESCRIPTION
+Este script procesa datos meteorológicos y ofrece opciones para especificar el directorio de trabajo, archivo de salida y mostrar resultados en pantalla.
+
+.PARAMETER Directorio
+Especifica el directorio de trabajo.
+
+.PARAMETER Archivo
+Especifica el archivo de salida.
+
+.PARAMETER Pantalla
+Especifica que la salida se muestre en pantalla.
+
+.PARAMETER Help
+Muestra la ayuda del script.
+
+.EXAMPLE
+.\script.ps1 -Directorio 'C:\ruta\al\directorio' -Archivo 'archivo.txt' -Pantalla
+
+.EXAMPLE
+.\script.ps1 -Help
+
+.NOTES
+Si elige obtener el resultado mediante un archivo de salida no será posible visualizarlo en pantalla.
+
+.INPUTS
+None
+
+.OUTPUTS
+None
+#>
+
+[CmdletBinding(DefaultParameterSetName='Parametros')]
+Param(
+    [Parameter(ParameterSetName='Parametros')]
     [string]$Directorio,
+    
+    [Parameter(ParameterSetName='Parametros')]
     [string]$Archivo,
+    
+    [Parameter(ParameterSetName='Parametros')]
     [switch]$Pantalla,
+    
+    [Parameter(ParameterSetName='Ayuda')]
     [switch]$Help
 )
 

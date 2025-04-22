@@ -1,0 +1,28 @@
+
+Que el directorio -d: 
+- no exista
+- no se lo pase al ejecutar o este vacio
+- no se tenga permisos de lectura
+- que este vacio el directorio y no se contengan archivos
+
+Para -a
+- Que no venga vacio
+- Que no exista
+- Que no se tengan permisos de escritura sobre el directorio
+
+Para -p y -a
+- exclusion de 1 solo, o -a o -p, no los 2 a la vez
+
+
+- Si se recibio en un archivo de una fecha x y en los reg hay uno de 
+una fecha pasada por demora se debe tener en cuenta tambien que quede todo ordenado
+
+- verificar del archivo:
+    - id numerico
+    - que venga con fecha valida
+    - hora valida
+    - ubicacion valida
+    - temperatura numerica con decimales
+
+
+- el json con JQ
