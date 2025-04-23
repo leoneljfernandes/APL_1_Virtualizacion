@@ -73,6 +73,39 @@ function validacionesDeParametros(){
     fi
 }
 
+# Escribo resultado
+function escribirResultado(){
+    nombre_base=$(basename "$matriz")
+    archivo_salida="./archivos/salida.$nombre_base"
+    echo "$1" > "$archivo_salida"
+}
+
+function procesarArchivo(){
+    if [ -n "$producto" ]; then
+        # Validar que el producto sea un número entero
+        if ! [[ "$producto" =~ ^-?[0-9]+$ ]]; then
+            echo "Error: El producto escalar debe ser un número entero."
+            exit 1
+        fi
+
+        echo "Realizando el producto escalar de la matriz $matriz con el valor $producto y separador $separador"
+        
+        resultado=$(awk -v prod="$producto" -v sep="$separador" -f producto.awk "$matriz")
+
+        #Escribo resultado pasando $resultado
+        escribirResultado "$resultado"
+
+    elif [ -n "$trasponer" ]; then
+        # Realizar la transposición
+        echo "Realizando la transposición de la matriz $matriz con separador $separador"
+
+        resultado=$(awk -F "$separador" -v sep="$separador" -f trasponer.awk "$matriz")
+
+        #Escribo resultado pasando $resultado
+        escribirResultado "$resultado"
+    fi
+}
+
 options=$(getopt -o m:p:ts:h --long matriz:,producto:,trasponer,separador:,help -n "$0" -- "$@" 2>&1)
 if [ $? -ne 0 ]; then
     # Extraemos el mensaje de error limpio
@@ -140,33 +173,9 @@ echo "Validaciones de parametros pasadas correctamente."
 validacionDeMatriz
 echo "Validacion de matriz pasada correctamente."
 
-
 # Procesar el archivo
-if [ -n "$producto" ]; then
-    # Validar que el producto sea un número entero
-    if ! [[ "$producto" =~ ^-?[0-9]+$ ]]; then
-        echo "Error: El producto escalar debe ser un número entero."
-        exit 1
-    fi
+procesarArchivo
 
-    echo "Realizando el producto escalar de la matriz $matriz con el valor $producto y separador $separador"
-    
-    resultado=$(awk -v prod="$producto" -v sep="$separador" -f producto.awk "$matriz")
-
-    nombre_base=$(basename "$matriz")
-    archivo_salida="./archivos/salida.$nombre_base"
-    echo "$resultado" > "$archivo_salida"
-
-elif [ -n "$trasponer" ]; then
-    # Realizar la transposición
-    echo "Realizando la transposición de la matriz $matriz con separador $separador"
-
-    resultado=$(awk -F "$separador" -v sep="$separador" -f trasponer.awk "$matriz")
-
-    nombre_base=$(basename "$matriz")
-    archivo_salida="./archivos/salida.$nombre_base"
-    echo "$resultado" > "$archivo_salida"
-fi
 
 
 

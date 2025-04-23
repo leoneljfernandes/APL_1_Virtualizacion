@@ -35,12 +35,11 @@
 #>
 
 Param (
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory=$true)]
     [string]$Matriz,
-    [Parameter(ParameterSetName='Producto',Mandatory=$false)]
-    [double]$Producto,
+    [switch]$Producto,
     [switch]$Trasponer,
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory=$true)]
     [string]$Separador,
     [switch]$Help
 )
