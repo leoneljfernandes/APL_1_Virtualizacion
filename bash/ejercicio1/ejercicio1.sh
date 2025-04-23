@@ -29,6 +29,10 @@ while true
 do
     case "$1" in # switch ($1) { 
         -d | --directorio) # case "-e":
+            #if [[ "$2" == -* ]]; then
+                #echo "Error: Se esperaba un argumento para la opción -d/--directorio."
+                #exit 1
+            #fi
             directorio="$2"
             shift 2
             ;;

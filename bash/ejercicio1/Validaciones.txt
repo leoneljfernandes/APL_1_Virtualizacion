@@ -1,8 +1,5 @@
 
 Que el directorio -d: 
-- no exista
-- no se lo pase al ejecutar o este vacio
-- no se tenga permisos de lectura
 - que este vacio el directorio y no se contengan archivos
 
 Para -a
