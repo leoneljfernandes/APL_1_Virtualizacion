@@ -15,7 +15,7 @@ function validacionDeMatriz(){
     primer_fila_cols=$(head -n 1 "$matriz" | awk -F "$separador" '{print NF}')
 
     # Validamos que la matriz sea válida llamando al script awk externo
-    awk -F "$separador" -v primer_fila_cols="$primer_fila_cols" -f validarMatriz.awk "$matriz"
+    awk -F "$separador" -v primer_fila_cols="$primer_fila_cols" -v sep="$separador" -f validarMatriz.awk "$matriz"
 
     if [ $? -ne 0 ]; then
         echo "Error: La matriz en el archivo $matriz no es válida."
@@ -135,7 +135,7 @@ done
 
 # Call validaciones
 validacionesDeParametros
-echo "Validaciones pasadas correctamente."
+echo "Validaciones de parametros pasadas correctamente."
 
 validacionDeMatriz
 echo "Validacion de matriz pasada correctamente."

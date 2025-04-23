@@ -4,6 +4,13 @@ BEGIN {
     error = 0
 }
 {
+    #valido que el separador pasado por parametro sea el correcto en el archivo
+    if(index($0,sep) == 0){
+        print "Error: El separador no coincide en el archivo"
+        error = 1
+        exit 1
+    }
+
     fila++
     # Verificar número de columnas
     if (NF != primer_fila_cols) {
@@ -11,6 +18,7 @@ BEGIN {
         error = 1
         exit 1
     }
+
     
     # Verificar valores numéricos
     for (i=1; i<=NF; i++) {
