@@ -9,10 +9,65 @@ function ayuda() {
     echo "  -h, --help                      Muestra esta ayuda."
 }
 
-options=$(getopt -o d:p:a:h --l help,directorio:,palabras:,archivos: -- "$@" 2> /dev/null)
-if [ "$?" != "0" ]
-then
-    echo 'Opciones incorrectas'
+function validarParametros(){
+    
+    if [ -z "$directorio" ]; then
+        echo "Error: Debe especificar un directorio."
+        exit 1
+    fi
+
+    if [ -z "$palabras" ]; then
+        echo "Error: Debe especificar al menos una palabra a contar."
+        exit 1
+    fi
+
+    if [ -z "$extensiones" ]; then
+        echo "Error: Debe especificar al menos una extension de archivos."
+        exit 1
+    fi
+
+    if [ -z $( ls -A "$directorio" 2>/dev/null) ]; then
+        echo "Error: El directorio está vacío."
+        exit 1
+    fi
+
+    if [ ! -d "$directorio" ] || [ ! -r "$directorio" ]; then
+        echo "Error: El directorio no existe o no tiene permisos de lectura."
+        exit 1
+    fi
+}
+
+function procesarArchivos(){
+    archivos=()
+    for ext in "${extensiones[@]}"; do
+        ext="${ext#.}"
+        echo "Buscando archivos .$ext en $directorio..."
+        while IFS= read -r archivo; do
+            archivos+=("$archivo")
+        done < <(find "$directorio" -type f -name "*.$ext")
+    done
+
+    if [ ${#archivos[@]} -eq 0 ]; then
+        echo "No se encontraron archivos con las extensiones especificadas."
+        exit 1
+    fi
+
+    # Ejecutamos AWK una sola vez sobre todos los archivos encontrados
+    awk -F ' ' -f procesar.awk -v palabras="$palabras" "${archivos[@]}"
+}
+
+options=$(getopt -o d:p:a:h --l help,directorio:,palabras:,archivos: -- "$@" 2>&1)
+if [ $? -ne 0 ]; then
+    # Extraemos el mensaje de error limpio
+    error_msg=$(echo "$options" | sed -e 's/^[^:]*://' -e 's/^ *//')
+    
+    # Verificamos si el error es por falta de argumento
+    if [[ "$error_msg" == *"requires an argument"* ]]; then
+        option_missing=$(echo "$error_msg" | grep -oP "'\K[^']+")
+        echo "Error: La opción -$option_missing requiere un valor"
+    else
+        echo "Error en las opciones: $error_msg"
+    fi
     exit 1
 fi
 
@@ -24,13 +79,25 @@ do
     case "$1" in
         -d | --directorio) # case "-e":
             directorio="$2"
+            if [[ "$2" == -* ]]; then
+                echo "Error: Después de -d debe especificar una ruta válida."
+                exit 1
+            fi
             shift 2
             ;;
         -p | --palabras)
+            if [[ "$2" == -* ]]; then
+                echo "Error: Después de -p debe especificar una lista de palabras separadas por comas."
+                exit 1
+            fi
             palabras="$2"
             shift 2
             ;;
         -a | --archivos)
+            if [[ "$2" == -* ]]; then
+                echo "Error: Después de -a debe especificar una lista de extensiones separadas por comas."
+                exit 1
+            fi
             IFS=',' read -ra extensiones <<< "$2" #Guardamos las extensiones en un array
             shift 2
             ;;
@@ -50,37 +117,7 @@ do
 done
 
 # Validar que esten todos los parametros
+validarParametros
+echo "Validaciones de parametros pasadas correctamente."
 
-if [ -z "$directorio" ]; then
-    echo "Error: Debe especificar un directorio."
-    exit 1
-fi
-
-if [ -z "$palabras" ]; then
-    echo "Error: Debe especificar al menos una palabra a contar."
-    exit 1
-fi
-
-if [ -z "$extensiones" ]; then
-    echo "Error: Debe especificar al menos una extension de archivos."
-    exit 1
-fi
-
-if [ ! -d "$directorio" ] || [ ! -r "$directorio" ]; then
-    echo "Error: El directorio no existe o no tiene permisos de lectura."
-    exit 1
-fi
-
-
-# Acumulamos todos los archivos con extensión deseada
-archivos=()
-for ext in "${extensiones[@]}"; do
-    ext="${ext#.}"
-    echo "Buscando archivos .$ext en $directorio..."
-    while IFS= read -r archivo; do
-        archivos+=("$archivo")
-    done < <(find "$directorio" -type f -name "*.$ext")
-done
-
-# Ejecutamos AWK una sola vez sobre todos los archivos encontrados
-awk -F ' ' -f procesar.awk -v palabras="$palabras" "${archivos[@]}"
+procesarArchivos
