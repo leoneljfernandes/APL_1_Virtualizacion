@@ -12,6 +12,12 @@ BEGIN {
     }
 }
 END{
+    if(length(buscadas) == 0){
+        print "No se encontraron coincidencias para las palabras especificadas."
+    }
+    print "Palabras encontradas:"
+    print "Palabra\tCantidad"
+    print "---------------------"
     for (p in buscadas) {
         if (buscadas[p] > 0) {
             print p, buscadas[p]

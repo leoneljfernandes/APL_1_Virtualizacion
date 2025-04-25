@@ -26,7 +26,8 @@ function validarParametros(){
         exit 1
     fi
 
-    if [ -z $( ls -A "$directorio" 2>/dev/null) ]; then
+    #validar que el directorio este vacio
+    if [ -z "$(ls -A "$directorio")" ]; then
         echo "Error: El directorio está vacío."
         exit 1
     fi
@@ -56,7 +57,7 @@ function procesarArchivos(){
     awk -F ' ' -f procesar.awk -v palabras="$palabras" "${archivos[@]}"
 }
 
-options=$(getopt -o d:p:a:h --l help,directorio:,palabras:,archivos: -- "$@" 2>&1)
+options=$(getopt -o d:p:a:h --long help,directorio:,palabras:,archivos: -- "$@" 2>&1)
 if [ $? -ne 0 ]; then
     # Extraemos el mensaje de error limpio
     error_msg=$(echo "$options" | sed -e 's/^[^:]*://' -e 's/^ *//')
