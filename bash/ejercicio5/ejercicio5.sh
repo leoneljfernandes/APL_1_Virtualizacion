@@ -1,5 +1,13 @@
 #!/bin/bash
 
+function ayuda() {
+    echo "Bienvenido al script contador de palabras."
+    echo "Debe especificar los siguientes argumentos:"
+    echo "  -i, --id        Id/s de las frutas a buscar."
+    echo "  -n, --name      Nombre/s de las frutas a buscar."   
+    echo "  -h, --help      Muestra esta ayuda."
+}
+
 API_URL="https://www.fruityvice.com/api/fruit"
 CACHE_DIR="./cache"
 
@@ -10,14 +18,16 @@ mkdir -p "$CACHE_DIR"
 ids=()
 names=()
 
-# Función para mostrar error y salir
-function salida_error() {
-    echo "$1" >&2
+options=$(getopt -o i:n:h --long help,id:,name: -- "$@" 2>&1)
+if [[ $? -ne 0 ]]; then
+    echo "Error: Opcion no reconocida."
+    ayuda
     exit 1
-}
+fi
+eval set -- "$options"
 
 # Procesar argumentos
-while [[ $# -gt 0 ]]; do
+while true; do
     case "$1" in
         -i|--id)
             IFS=',' read -r -a ids <<< "$2"
@@ -27,33 +37,31 @@ while [[ $# -gt 0 ]]; do
             IFS=',' read -r -a names <<< "$2"
             shift 2
             ;;
+        -h|--help)
+            ayuda
+            exit 0
+            ;;
+        --)
+            shift
+            break
+            ;;
         *)
-            salida_error "Parámetro no reconocido: $1"
+            echo "Error: Opcion no reconocida."
+            exit 1
             ;;
     esac
 done
 
-# Función para consultar fruta
-busca_fruta() {
-    local tipo="$1"
-    local value="$2"
-    local archivos_cache="$CACHE_DIR/${tipo}_${value}.json"
 
-    if [[ -f "$cache_file" ]]; then
-        cat "$cache_file"
-    else
-        respuesta=$(curl -s -f "${API_URL}/${value}")
-        if [[ $? -ne 0 || -z "$respuesta" ]]; then
-            echo "Error: No se encontró información para $tipo '$value'."
-            return 1
-        fi
-        echo "$respuesta" > "$archivos_cache"
-        echo "$respuesta"
+# Validar parametros
+function validarParametros(){
+    if [[ ${#ids[@]} -eq 0 && ${#names[@]} -eq 0 ]]; then
+        echo "Debe especificar al menos --id o --name."
+        exit 1
     fi
 }
 
-# Función para imprimir información
-imprimir_info() {
+function imprimir_info() {
     local json="$1"
 
     id=$(echo "$json" | jq '.id')
@@ -76,15 +84,72 @@ imprimir_info() {
     echo
 }
 
-# Validar que haya al menos un parámetro
-if [[ ${#ids[@]} -eq 0 && ${#names[@]} -eq 0 ]]; then
-    error_exit "Debe especificar al menos --id o --name."
-fi
+function buscar_id(){
+    local id="$1"
+    local cache_file="$CACHE_DIR/${id}.json"
+
+    if [[ -f "$cache_file" ]]; then
+        echo "Fruta encontrada en cache (id=$id)" >&2
+        cat "$cache_file"
+        return 0
+    fi
+
+    return 1
+}
+
+function buscar_name(){
+    local name="$1"
+
+    for archivo in "$CACHE_DIR"/*.json; do
+        nombre=$(jq -r '.name' "$archivo" | tr '[:upper:]' '[:lower:]')
+
+        if [[ "$nombre" == "$name" ]]; then
+            echo "Fruta encontrada en cache (name=$name)" >&2
+            cat "$archivo"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+
+function buscar_fruta(){
+    local query="$1"
+    local valor="$2"
+    local resultado
+
+    if [[ "$query" == "id" ]]; then
+        if resultado=$(buscar_id "$valor"); then
+            echo "$resultado"
+            return 0
+        fi
+    fi
+
+    if [[ "$query" == "name" ]]; then
+        if resultado=$(buscar_name "$valor"); then
+            echo "$resultado"
+            return 0
+        fi
+    fi
+
+    respuesta=$(curl -s -f "${API_URL}/${valor}")
+    if [[ $? -ne 0 || -z "$respuesta" ]]; then
+        echo "Error: No se encontró información para $query '$valor'." >&2
+        return 1
+    fi
+
+    idFruta=$(echo "$respuesta" | jq -r '.id')
+    echo "$respuesta" > "$CACHE_DIR/$idFruta.json"
+    echo "$respuesta"
+    return 0
+}
+
+validarParametros
 
 # Procesar IDs
 for id in "${ids[@]}"; do
-    json=$(busca_fruta "id" "$id")
-    if [[ $? -eq 0 ]]; then
+    if json=$(buscar_fruta "id" "$id"); then
         imprimir_info "$json"
     fi
 done
@@ -92,8 +157,7 @@ done
 # Procesar Nombres
 for name in "${names[@]}"; do
     name_clean=$(echo "$name" | tr '[:upper:]' '[:lower:]' | xargs)
-    json=$(busca_fruta "name" "$name_clean")
-    if [[ $? -eq 0 ]]; then
+    if json=$(buscar_fruta "name" "$name_clean"); then
         imprimir_info "$json"
     fi
 done
