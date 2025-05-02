@@ -1,0 +1,14 @@
+{
+  "name": "Tomato",
+  "id": 5,
+  "family": "Solanaceae",
+  "order": "Solanales",
+  "genus": "Solanum",
+  "nutritions": {
+    "calories": 74,
+    "fat": 0.2,
+    "sugar": 2.6,
+    "carbohydrates": 3.9,
+    "protein": 0.9
+  }
+}

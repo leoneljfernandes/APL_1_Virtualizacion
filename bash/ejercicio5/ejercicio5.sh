@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function ayuda() {
-    echo "Bienvenido al script contador de palabras."
+    echo "Bienvenido al script de consulta a la API Fruityvice."
     echo "Debe especificar los siguientes argumentos:"
     echo "  -i, --id        Id/s de las frutas a buscar."
     echo "  -n, --name      Nombre/s de las frutas a buscar."   
@@ -20,8 +20,16 @@ names=()
 
 options=$(getopt -o i:n:h --long help,id:,name: -- "$@" 2>&1)
 if [[ $? -ne 0 ]]; then
-    echo "Error: Opcion no reconocida."
-    ayuda
+    # Extraemos el mensaje de error limpio
+    error_msg=$(echo "$options" | sed -e 's/^[^:]*://' -e 's/^ *//')
+    
+    # Verificamos si el error es por falta de argumento
+    if [[ "$error_msg" == *"requires an argument"* ]]; then
+        option_missing=$(echo "$error_msg" | grep -oP "'\K[^']+")
+        echo "Error: La opción -$option_missing requiere un valor"
+    else
+        echo "Error en las opciones: $error_msg"
+    fi
     exit 1
 fi
 eval set -- "$options"
@@ -30,10 +38,18 @@ eval set -- "$options"
 while true; do
     case "$1" in
         -i|--id)
+            if [[ "$2" == -* ]]; then
+                echo "Error: Después de -i o --id debe especificar un id válido."
+                exit 1
+            fi
             IFS=',' read -r -a ids <<< "$2"
             shift 2
             ;;
         -n|--name)
+            if [[ "$2" == -* ]]; then
+                echo "Error: Después de -n o --name debe especificar un nombre válido."
+                exit 1
+            fi
             IFS=',' read -r -a names <<< "$2"
             shift 2
             ;;
@@ -59,6 +75,19 @@ function validarParametros(){
         echo "Debe especificar al menos --id o --name."
         exit 1
     fi
+    
+    for id in "${#ids[@]}"; do
+        if ! [[ "$id" =~ ^[0-9]+$ ]]; then
+            echo "Error: El id '$id' no es válido. Debe ser un número entero."
+            exit 1
+        fi
+    done
+    for name in "${names[@]}"; do
+        if [[ "$name" =~ [^a-zA-Z0-9_ ] ]]; then
+            echo "Error: El nombre '$name' no es válido. Debe contener solo letras, números y espacios."
+            exit 1
+        fi
+    done
 }
 
 function imprimir_info() {
