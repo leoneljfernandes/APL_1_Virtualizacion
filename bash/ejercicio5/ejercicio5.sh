@@ -9,7 +9,7 @@ function ayuda() {
 }
 
 API_URL="https://www.fruityvice.com/api/fruit"
-CACHE_DIR="./cache"
+CACHE_DIR="/tmp/cacheEj5"
 
 # Crear el directorio de cache si no existe
 mkdir -p "$CACHE_DIR"
@@ -83,12 +83,31 @@ function validarParametros(){
         fi
     done
     for name in "${names[@]}"; do
-        if [[ "$name" =~ [^a-zA-Z0-9_ ] ]]; then
+        if [[ "$name" =~ [^a-zA-Z0-9_] ]]; then
             echo "Error: El nombre '$name' no es válido. Debe contener solo letras, números y espacios."
             exit 1
         fi
     done
 }
+
+CACHE_TTL=60  # 1 horas en segundos
+
+function cache_valido() {
+    local archivo="$1"
+    if [[ ! -f "$archivo" ]]; then
+        return 1
+    fi
+    local mod_time=$(stat -c %Y "$archivo")
+    local now=$(date +%s)
+    if (( now - mod_time < CACHE_TTL )); then
+        return 0  # Cache válido
+    else
+        archivo_a_borrar="$archivo"
+        trap '[[ -n "$archivo_a_borrar" ]] && rm -f "$archivo_a_borrar"' EXIT
+        return 1  # Cache expirado
+    fi
+}
+
 
 function imprimir_info() {
     local json="$1"
@@ -117,7 +136,7 @@ function buscar_id(){
     local id="$1"
     local cache_file="$CACHE_DIR/${id}.json"
 
-    if [[ -f "$cache_file" ]]; then
+    if cache_valido "$cache_file"; then
         echo "Fruta encontrada en cache (id=$id)" >&2
         cat "$cache_file"
         return 0
@@ -130,6 +149,10 @@ function buscar_name(){
     local name="$1"
 
     for archivo in "$CACHE_DIR"/*.json; do
+
+        if ! cache_valido "$archivo"; then
+            continue
+        fi
         nombre=$(jq -r '.name' "$archivo" | tr '[:upper:]' '[:lower:]')
 
         if [[ "$nombre" == "$name" ]]; then

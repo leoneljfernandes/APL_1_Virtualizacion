@@ -37,7 +37,7 @@ function Get-Ayuda {
 }
 
 $API_URL="https://www.fruityvice.com/api/fruit"
-$CACHE_DIR="./cache"
+$CACHE_DIR="/tmp/cacheEj5_Pwsh"
 $CACHE_TTL = 3600 # 1 hora
 
 if ( -not (Test-Path -Path $CACHE_DIR)){
@@ -78,6 +78,12 @@ function cache_valido(){
     $diferenciaTiempo = ($ahora - $modTime).TotalSeconds
 
     if ($diferenciaTiempo -gt $CACHE_TTL){
+        try{
+            Remove-Item $archivoCache
+        }catch{
+            Write-Host "Error: No se pudo eliminar el archivo de cache $archivoCache"
+        }
+        
         return $false #cache expirado
     }
     return $true
