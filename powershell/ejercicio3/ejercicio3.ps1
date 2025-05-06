@@ -24,8 +24,6 @@ Muestra la ayuda del script con una descripción de los parámetros requeridos.
 #>
 
 
-
-
 Param (
     [Parameter(Mandatory=$true, ParameterSetName='Busqueda')]
     [string]$Directorio,
