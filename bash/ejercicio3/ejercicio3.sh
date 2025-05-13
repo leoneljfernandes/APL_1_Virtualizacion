@@ -4,7 +4,7 @@ function ayuda() {
     echo "Bienvenido al script contador de palabras."
     echo "Debe especificar los siguientes argumentos:"
     echo "  -d, --directorio <directorio>   Especifica el directorio donde se contengan textos a analizar."
-    echo "  -p, --palabras                  Lista de palabras a contar separadas por comas."   
+    echo "  -p, --palabras                  Lista de palabras a contar separadas por comas sin espacio."   
     echo "  -a, --archivos                  Lista de extensiones de archivos a buscar separadas por comas."
     echo "  -h, --help                      Muestra esta ayuda."
 }
@@ -38,7 +38,7 @@ function validarParametros(){
     fi
 }
 
-function procesarArchivos(){
+function procesarArchivos() {
     archivos=()
     for ext in "${extensiones[@]}"; do
         ext="${ext#.}"
@@ -53,8 +53,34 @@ function procesarArchivos(){
         exit 1
     fi
 
-    # Ejecutamos AWK una sola vez sobre todos los archivos encontrados
-    awk -F ' ' -f procesar.awk -v palabras="$palabras" "${archivos[@]}"
+    awk -F ' ' -v palabras="$palabras" '
+    BEGIN {
+        n = split(palabras, lista, ",")
+        for (i = 1; i <= n; i++) {
+            buscadas[lista[i]] = 0
+        }
+    }
+    {
+        for (i = 1; i <= NF; i++) {
+            if ($i in buscadas) {
+                buscadas[$i]++
+            }
+        }
+    }
+    END {
+        if (length(buscadas) == 0) {
+            print "No se encontraron coincidencias para las palabras especificadas."
+        }
+        print "Palabras encontradas:"
+        print "Palabra\tCantidad"
+        print "---------------------"
+        for (p in buscadas) {
+            if (buscadas[p] > 0) {
+                print p, buscadas[p]
+            }
+        }
+    }
+    ' "${archivos[@]}"
 }
 
 options=$(getopt -o d:p:a:h --long help,directorio:,palabras:,archivos: -- "$@" 2>&1)
