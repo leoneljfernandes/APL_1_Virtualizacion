@@ -38,7 +38,7 @@ function Get-Ayuda {
 
 $API_URL="https://www.fruityvice.com/api/fruit"
 $CACHE_DIR="/tmp/cacheEj5_Pwsh"
-$CACHE_TTL = 3600 # 1 hora
+$CACHE_TTL = 60 # 1 hora
 
 if ( -not (Test-Path -Path $CACHE_DIR)){
     New-Item -ItemType Directory -Path $CACHE_DIR
@@ -68,7 +68,8 @@ function validarParametros(){
 
 function cache_valido(){
     param(
-        [string]$archivoCache
+        [string]$archivoCache,
+        [boolean]$verificador
     )
     if (-not (Test-Path -Path $archivoCache)){
         return $false
@@ -78,12 +79,9 @@ function cache_valido(){
     $diferenciaTiempo = ($ahora - $modTime).TotalSeconds
 
     if ($diferenciaTiempo -gt $CACHE_TTL){
-        try{
-            Remove-Item $archivoCache
-        }catch{
-            Write-Host "Error: No se pudo eliminar el archivo de cache $archivoCache"
+        if ($verificador){
+            return $true
         }
-        
         return $false #cache expirado
     }
     return $true
@@ -96,12 +94,15 @@ function buscarFruta(){
         $valor
     )
 
+    #implemento un verificador para basar como flag al cache, booleano
+    $verificador = $false
+
     $jsonFruta = $null
 
     switch ($query){
         "id" {            
             # Verifico si la fruta ya fue consultada y es valida la cache
-            if (cache_valido -archivoCache (Join-Path -Path $CACHE_DIR -ChildPath "$valor.json")){
+            if (cache_valido -archivoCache (Join-Path -Path $CACHE_DIR -ChildPath "$valor.json") -verificador $verificador){
                 Write-Host "La fruta con id $valor ya fue consultada."
                 $fullPathFruta = Join-Path -Path $CACHE_DIR -ChildPath "$valor.json"
                 $jsonFruta = Get-Content -Path $fullPathFruta | ConvertFrom-Json 
@@ -121,6 +122,28 @@ function buscarFruta(){
                 $errorFile = Join-Path -Path $CACHE_DIR -ChildPath "error.log"
                 $errorMessage | Out-File -FilePath $errorFile -Append
                 Write-Host "Error: No se encontro la fruta con nombre $valor."
+                try {
+                    Write-Host "Intentando utilizar archivo en cache..."
+                    $archivoCache = Join-Path -Path $CACHE_DIR -ChildPath "$valor.json"
+                    
+                    if (Test-Path $archivoCache) {
+                        $verificador = $true
+                        if (cache_valido -archivoCache $archivoCache -verificador $verificador) {
+                            Write-Host "La fruta con id $valor se encuentra vencida en cache."
+                            $jsonFruta = Get-Content -Path $archivoCache | ConvertFrom-Json 
+                            Write-Host ($jsonFruta | ConvertTo-Json -Depth 10)
+                            return
+                        } else {
+                            Write-Host "La fruta con id $valor no es válida en cache."
+                        }
+                    } else {
+                        throw "Archivo de cache no encontrado"
+                    }
+                }
+                catch {
+                    Write-Host "No se encontro la fruta con $valor en cache"
+                }
+
                 return
             }
 
