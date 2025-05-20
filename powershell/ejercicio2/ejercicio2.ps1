@@ -46,7 +46,7 @@ Param (
     [Parameter(Mandatory=$true, HelpMessage="Ruta de la matriz de entrada", ParameterSetName='Parametros')]
     [string]$Matriz,
     [Parameter(Mandatory=$false, HelpMessage="Valor para el producto escalar", ParameterSetName='Parametros')]
-    [switch]$Producto,
+    [int]$Producto,
     [Parameter (Mandatory=$false, HelpMessage="Realiza la transposición de la matriz", ParameterSetName='Parametros')]
     [switch]$Trasponer,
     [Parameter(Mandatory=$true, HelpMessage="Separador de columnas", ParameterSetName='Parametros')]
@@ -189,9 +189,6 @@ validarArchivoMatriz
 $matrizC = @()
 $matrizC = validarMatriz -matriz $matrizC
 
-
-Write-Host $Producto
-Write-Host $Trasponer
 #Procesamos la matriz
 if ($Producto -and -not $Trasponer) {
     for($i = 0; $i -lt $matrizC.Count; $i++) {
