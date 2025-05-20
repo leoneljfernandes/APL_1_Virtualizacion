@@ -31,13 +31,13 @@ Muestra esta ayuda.
 Muestra la ayuda del script con una descripción de los parámetros requeridos.
 #>
 
-
+[CmdletBinding(DefaultParameterSetName='Parametros')]
 param(
-    [Parameter(Mandatory=$true, HelpMessage="Ruta del directorio a analizar")]
+    [Parameter(Mandatory=$true, HelpMessage="Ruta del directorio a analizar", ParameterSetName='Parametros')]
     [string]$directorio,
-    [Parameter(Mandatory=$true, HelpMessage="Lista de palabras a contabilizar")]
+    [Parameter(Mandatory=$true, HelpMessage="Lista de palabras a contabilizar", ParameterSetName='Parametros')]
     [string[]]$palabras,
-    [Parameter(Mandatory=$true, HelpMessage="Lista de extensiones de archivos a buscar.")]
+    [Parameter(Mandatory=$true, HelpMessage="Lista de extensiones de archivos a buscar.", ParameterSetName='Parametros')]
     [string[]]$archivos,
     [Parameter(Mandatory=$false, ParameterSetName='Ayuda', HelpMessage="Mas info de ayuda")]
     [switch]$Help
