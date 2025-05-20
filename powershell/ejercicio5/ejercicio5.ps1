@@ -124,6 +124,7 @@ function buscarFruta(){
                 Write-Host "Error: No se encontro la fruta con nombre $valor."
                 try {
                     Write-Host "Intentando utilizar archivo en cache..."
+
                     $archivoCache = Join-Path -Path $CACHE_DIR -ChildPath "$valor.json"
                     
                     if (Test-Path $archivoCache) {
@@ -169,7 +170,7 @@ function buscarFruta(){
 
                 $contenidoJson = Get-Content -Path $archivo.FullName | ConvertFrom-Json
 
-                if ($contenidoJson.name -eq $valor -and (cache_valido -archivoCache $archivo.FullName)){
+                if ($contenidoJson.name -eq $valor -and (cache_valido -archivoCache $archivo.FullName -verificador $verificador)){
                     Write-Host "La fruta con nombre $valor ya fue consultada."
                     $pathFruta = $contenidoJson.id.ToString() + ".json"
                     $fullPathFruta = Join-Path -Path $CACHE_DIR -ChildPath $pathFruta
@@ -190,6 +191,30 @@ function buscarFruta(){
                 $errorFile = Join-Path -Path $CACHE_DIR -ChildPath "error.log"
                 $errorMessage | Out-File -FilePath $errorFile -Append
                 Write-Host "Error: No se encontro la fruta con nombre $valor."
+
+                $verificador = $true
+                foreach ($archivo in $archivosJson) {
+                    try {
+                        $contenidoJson = Get-Content -Path $archivo.FullName | ConvertFrom-Json
+
+                        if ($contenidoJson.name -eq $valor -and (cache_valido -archivoCache $archivo.FullName -verificador $verificador)) {
+                            Write-Host "La fruta con nombre $valor ya fue consultada y se encuentra en cache vencida."
+                            $pathFruta = $contenidoJson.id.ToString() + ".json"
+                            $fullPathFruta = Join-Path -Path $CACHE_DIR -ChildPath $pathFruta
+
+                            try {
+                                $jsonFruta = Get-Content -Path $fullPathFruta | ConvertFrom-Json
+                                Write-Host ($jsonFruta | ConvertTo-Json -Depth 10)
+                            } catch {
+                                Write-Host "Error al leer el archivo de fruta en cache: $_"
+                            }
+
+                            return
+                        }
+                    } catch {
+                        Write-Host "Error al leer o procesar el archivo JSON '$($archivo.FullName)': $_"
+                    }
+                }
                 return
             }
             
