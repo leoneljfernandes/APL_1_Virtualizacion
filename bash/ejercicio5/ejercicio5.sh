@@ -94,6 +94,7 @@ CACHE_TTL=60  # 1 horas en segundos
 
 function cache_valido() {
     local archivo="$1"
+    local verificador="$2"
     if [[ ! -f "$archivo" ]]; then
         return 1
     fi
@@ -102,8 +103,11 @@ function cache_valido() {
     if (( now - mod_time < CACHE_TTL )); then
         return 0  # Cache válido
     else
-        archivo_a_borrar="$archivo"
-        trap '[[ -n "$archivo_a_borrar" ]] && rm -f "$archivo_a_borrar"' EXIT
+        if [[ "$verificador" == false ]]; then
+           return 0; # Flag en caso de cache vencido pero el verificador es false, asi utilizo el archivo en cache vencido en caso de no conexion.
+        fi
+        #archivo_a_borrar="$archivo"
+        #trap '[[ -n "$archivo_a_borrar" ]] && rm -f "$archivo_a_borrar"' EXIT
         return 1  # Cache expirado
     fi
 }
@@ -134,9 +138,10 @@ function imprimir_info() {
 
 function buscar_id(){
     local id="$1"
+    local verificador="$2"
     local cache_file="$CACHE_DIR/${id}.json"
 
-    if cache_valido "$cache_file"; then
+    if cache_valido "$cache_file" "$verificador"; then
         echo "Fruta encontrada en cache (id=$id)" >&2
         cat "$cache_file"
         return 0
@@ -147,10 +152,10 @@ function buscar_id(){
 
 function buscar_name(){
     local name="$1"
-
+    local verificador="$2"
     for archivo in "$CACHE_DIR"/*.json; do
 
-        if ! cache_valido "$archivo"; then
+        if ! cache_valido "$archivo" "$verificador"; then
             continue
         fi
         nombre=$(jq -r '.name' "$archivo" | tr '[:upper:]' '[:lower:]')
@@ -170,24 +175,46 @@ function buscar_fruta(){
     local query="$1"
     local valor="$2"
     local resultado
+    local verificador=true
 
     if [[ "$query" == "id" ]]; then
-        if resultado=$(buscar_id "$valor"); then
+        if resultado=$(buscar_id "$valor" "$verificador"); then
             echo "$resultado"
             return 0
         fi
     fi
 
     if [[ "$query" == "name" ]]; then
-        if resultado=$(buscar_name "$valor"); then
+        if resultado=$(buscar_name "$valor" "$verificador"); then
             echo "$resultado"
             return 0
         fi
     fi
 
-    respuesta=$(curl -s -f "${API_URL}/${valor}")
+    # Obtener desde la API
+    respuesta=$(curl -s --fail --connect-timeout 5 "${API_URL}/${valor}")
     if [[ $? -ne 0 || -z "$respuesta" ]]; then
-        echo "Error: No se encontró información para $query '$valor'." >&2
+        echo "Advertencia: No se pudo contactar a la API para $query='$valor'." >&2
+        echo "Buscando en cache..." >&2
+        verificador=false
+        if [[ "$query" == "id" ]]; then
+            if resultado=$(buscar_id "$valor" "$verificador"); then
+                echo "$resultado"
+                return 0
+            fi
+        fi
+
+        if [[ "$query" == "name" ]]; then
+            if resultado=$(buscar_name "$valor" "$verificador"); then
+                echo "$resultado"
+                return 0
+            fi
+        fi     
+    fi
+
+    # Validar que sea un JSON válido (y no por ejemplo, HTML de error)
+    if ! echo "$respuesta" | jq empty >/dev/null 2>&1; then
+        echo "Advertencia: Respuesta inválida desde la API para $query='$valor'." >&2
         return 1
     fi
 

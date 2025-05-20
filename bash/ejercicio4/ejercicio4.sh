@@ -13,12 +13,17 @@ SELF_PATH="$(realpath "$0")"
 
 # Función para mostrar uso
 function mostrar_uso() {
-    echo "Uso:"
-    echo "  $SCRIPT_NAME -d <directorio> -s <backup_dir> -c <cantidad>"
-    echo "  $SCRIPT_NAME -d <directorio> -k"
+    echo "  $SCRIPT_NAME "
+    echo "Debe especificar los siguientes argumentos:"
+    echo "  -d, --directorio <directorio>   Ruta del directorio a monitorear."
+    echo "  -s, --salida                    Ruta del directorio en donde se van a crear los backups."   
+    echo "  -k, --kill                      Flag (switch) que se utiliza para indicar que el script debe detener el demonio previamente iniciado.
+                                            Este parámetro solo se puede usar junto con –d o -directorio."
+    echo "  -c, --cantidad                  Cantidad de archivos a ordenar antes de generar un backup."                                        
+    echo "  -h, --help                      Muestra esta ayuda."
     exit 0
 }
-
+    
 # Función para lanzar el demonio en segundo plano
 function lanzar_demonio() {
     nohup "$SELF_PATH" --daemon "$@" > /dev/null 2>&1 &
