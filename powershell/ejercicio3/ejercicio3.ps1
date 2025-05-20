@@ -1,3 +1,11 @@
+
+#!/bin/pwsh
+# Integrantes del grupo:
+# - Berti Rodrigo
+# - Burnowicz Alejo
+# - Fernandes Leonel
+# - Federico Agustin
+
 <#
 .SYNOPSIS
 Muestra información sobre cómo usar el script contador de palabras.
@@ -24,17 +32,14 @@ Muestra la ayuda del script con una descripción de los parámetros requeridos.
 #>
 
 
-Param (
-    [Parameter(Mandatory=$true, ParameterSetName='Busqueda')]
-    [string]$Directorio,
-
-    [Parameter(Mandatory=$true, ParameterSetName='Busqueda')]
-    [string]$Palabras,
-
-    [Parameter(Mandatory=$true, ParameterSetName='Busqueda')]
-    [string]$Archivos,
-
-    [Parameter(Mandatory=$false, ParameterSetName='Ayuda')]
+param(
+    [Parameter(Mandatory=$true, HelpMessage="Ruta del directorio a analizar")]
+    [string]$directorio,
+    [Parameter(Mandatory=$true, HelpMessage="Lista de palabras a contabilizar")]
+    [string[]]$palabras,
+    [Parameter(Mandatory=$true, HelpMessage="Lista de extensiones de archivos a buscar.")]
+    [string[]]$archivos,
+    [Parameter(Mandatory=$false, ParameterSetName='Ayuda', HelpMessage="Mas info de ayuda")]
     [switch]$Help
 )
 
@@ -48,131 +53,61 @@ function Get-Ayuda {
 }
 
 function validacionDeParametros{
-    if (-not $Directorio){
+
+    if ($Help) {
+        Get-Ayuda
+        exit 1
+    }
+
+    if (-not $directorio){
         Write-Host "Error: Debe especificar un directorio."
         exit 1
     }
-    if (-not $Palabras){
+    if (-not $palabras){
         Write-Host "Error: Debe especificar al menos una palaba a buscar."
         exit 1
     }
-    if(-not $Archivos){
+    if(-not $archivos){
         Write-Host "Error: Debe especificar al menos una extension de archivo a buscar."
         exit 1
     }
 
     # Validamos que el directorio exista
-    if (-not (Test-Path -Path $Directorio)){
-        Write-Host "Error: El directorio $Directorio no existe."
+    if (-not (Test-Path -Path $directorio)){
+        Write-Host "Error: El directorio $directorio no existe."
         exit 1
     }
 
     # Validamos que el directorio tenga permisos de lectura
-    if (-not (Test-Path -Path $Directorio -PathType Container)){
-        Write-Host "Error: No se tienen permisos de lectura en el directorio $Directorio."
+    if (-not (Test-Path -Path $directorio -PathType Container)){
+        Write-Host "Error: No se tienen permisos de lectura en el directorio $directorio."
         exit 1
     }
 }
 
-function obtenerArchivos{
-    
-    $archivosEncontrados  = @()
-
-    foreach ($ext in $Archivos.Split(',')){
-        $archivosEncontrados  += Get-ChildItem -Path $Directorio -Filter "*.$ext" -Recurse
-    }
-
-    if ($archivosEncontrados.Count -eq 0){
-        Write-Host "Error: No se encontraron archivos en el directorio $Directorio con las extensiones especificadas."
-        exit 1
-    }
-
-    return $archivosEncontrados
-}
-
-function procesarArchivo{
-    param (
-        [hashtable]$conteoPalabras,
-        [array]$archivosEncontrados
-    )
-
-    $palabrasClaves = @($conteoPalabras.Keys)
-    
-    foreach ($arch in $archivosEncontrados) {
-        Write-Host "Procesando archivo: $($arch.FullName)"
-        
-        try {
-            # Verificar permisos de lectura
-            $stream = $null
-            try {
-                $stream = [System.IO.File]::OpenRead($arch.FullName)
-            }
-            finally {
-                if ($null -ne $stream) {
-                    $stream.Close()
-                }
-            }
-
-            # Verificar si el archivo está vacío
-            if ($arch.Length -eq 0) {
-                Write-Host "Advertencia: El archivo $($arch.Name) está vacío."
-                continue
-            }
-
-            # Leer contenido
-            $contenido = Get-Content -Path $arch.FullName -Raw -ErrorAction Stop
-
-            # Contar palabras
-            foreach ($palabra in $palabrasClaves) {
-                $aciertos = [regex]::Matches($contenido, "\b$([regex]::Escape($palabra))\b", 'IgnoreCase')
-                $conteoPalabras[$palabra] += $aciertos.Count
-            }
-        }
-        catch [UnauthorizedAccessException] {
-            Write-Host "Error: No se tienen permisos para leer el archivo $($arch.Name)"
-            continue
-        }
-        catch {
-            Write-Host "Error al procesar $($arch.Name): $_"
-            continue
-        }
-    }
-
-    return $conteoPalabras
-}
-
-if ($Help) {
-    Get-Ayuda
-    exit
-}
-
-# Validaciones
-#Valido que se hayan pasadoso los argumentos necesarios
 validacionDeParametros
 
-# Obtengo todos los archivos con extension especificada en $Archivos
-$archivosEncontrados  = @()
-$archivosEncontrados = obtenerArchivos
 
-#debug de los archivos existentes
-#foreach ($arch in $archivosEncontrados ){
-#    Write-Host "Archivo encontrado: $($arch.FullName)"
-#}
-
-# Guardo las palabras buscadas en un array para contar la cantidad de veces que aparecen
-$conteoPalabras = @{}
-foreach ($palabra in $Palabras.Split(',')){
-    $conteoPalabras[$palabra] = 0
+#matufia para asegurar que el parametro archivos llego como array porque anda raro
+if ($archivos.Count -eq 1 -and $archivos[0] -like "*,*") {
+    $archivos = $archivos[0] -split "," | ForEach-Object { $_.Trim() }
 }
 
-# Procesar archivos
-$conteoPalabras = procesarArchivo $conteoPalabras $archivosEncontrados
+#matufia para concatenar el punto y el * que indica todo lo que esta atras
+$ExtensionTypes = $archivos | ForEach-Object { "*." + $_}
 
-# Mostrar resultados
-Write-Host "`nResultados finales:"
-$conteoPalabras.GetEnumerator() | Sort-Object -Property Value -Descending | ForEach-Object {
-    Write-Host "$($_.Key): $($_.Value)"
+#matufia para asegurar que el parametro palabras llego como array porque anda raro
+if ($palabras.Count -eq 1 -and $palabras[0] -like "*,*") {
+    $palabras = $palabras[0] -split "," | ForEach-Object { $_.Trim() }
 }
 
+$ObjArr = Get-ChildItem -Path $directorio -Include $ExtensionTypes -Recurse -ErrorAction SilentlyContinue -Force
 
+#notar el parametro -Raw para que TextContainer no sea un Object[] y sea un string entero para que funcione bien Select-String
+$TextContainer = $ObjArr | ForEach-Object { Get-Content $_ -Raw }
 
+foreach ($palabra in $palabras) {
+    $matches = Select-String -InputObject $TextContainer -Pattern $palabra -AllMatches -CaseSensitive
+    $conteo = ($matches.Matches).Count
+    Write-Output "$palabra : $conteo"
+}
