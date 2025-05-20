@@ -89,113 +89,7 @@ function validacionParametros(){
         Write-Host "Error: No se encontraron archivos CSV en el directorio especificado."
         exit
     }
-}
-
-function validarDatos(){
-    param($datos)
-
-    foreach ($registro in $datos) {
-        #Valido que esten todos los campos
-        if (-not $registro.Id -or -not $registro.Fecha -or -not $registro.Hora -or -not $registro.Ubicacion -or -not $registro.Temperatura) {
-            Write-Host "Error: Registro incompleto en el archivo CSV." -ForegroundColor Red
-            return 1
-        }
-
-        #valido que el id sea numerico
-        if (-not [int]::TryParse($registro.Id, [ref]$null)){
-            Write-Host "Error: Id no valido en el registro: $($registro.Id)" -ForegroundColor Red
-            return 1
-        }
-
-        #valido que la fecha sea correcta
-        if (-not [datetime]::TryParse($registro.Fecha, [ref]$null)) {
-            Write-Host "Error: Fecha no válida en el registro con Id: $($registro.Id)" -ForegroundColor Red
-            return 1
-        }
-
-        #valido que la hora sea correcta
-        if (-not [datetime]::TryParseExact($registro.Hora, 'HH:mm:ss', $null, [System.Globalization.DateTimeStyles]::None, [ref]$null)) {
-            Write-Host "Error: Hora no válida en el registro con Id: $($registro.Id)" -ForegroundColor Red
-            return 1
-        }
-
-        #valido que la ubicacion sea correcta, debe ser Norte, Sur, Este u Oeste
-        if ( $registro.Ubicacion -notmatch '^(Norte|Sur|Este|Oeste)$') {
-            Write-Host "Error: Ubicación no válida en el registro con Id: $($registro.Id)" -ForegroundColor Red
-            return 1
-        }
-
-        #valido que la temp sea numerica
-        if (-not [double]::TryParse($registro.Temperatura, [ref]$null)) {
-            Write-Host "Error: Temperatura no válida en el registro con Id: $($registro.Id)" -ForegroundColor Red
-            return 1
-        }
-    }
-}
-
-function obtenerValores(){
-    param($resultadosGlobales)
-
-    foreach ($arch in $archivos) {
-        Write-Host "`nProcesando archivo: $($arch.FullName)" -ForegroundColor Cyan
-
-        try {
-            # Importar CSV con validación de estructura
-            $datos = Import-Csv -Path $arch.FullName -Header "Id", "Fecha", "Hora", "Ubicacion", "Temperatura" -ErrorAction Stop
-
-            $resultado = 0
-            resultado = validarDatos -datos $datos
-            #si resultado es distinto de 0 finalizo el script de procesamiento
-            if[ $resultado -ne 0] {
-                Write-Host "Error: El archivo $($arch.Name) no tiene la estructura correcta" -ForegroundColor Red
-                exit 1
-            }
-
-            # Verificar si se importaron datos correctamente
-            if ($datos.Count -eq 0) {
-                Write-Host "Advertencia: El archivo $($arch.Name) no contiene datos" -ForegroundColor Yellow
-                exit 1
-            }
-            
-            # Procesamos los datos
-            foreach ($registro in $datos){
-                try{
-                    $temp = [double]$registro.Temperatura
-                    $fecha = $registro.Fecha
-                    $ubicacion = $registro.Ubicacion
-
-                    if (-not $resultadosGlobales.ContainsKey($fecha)) {
-                            $resultadosGlobales[$fecha] = @{}
-                    }
-
-                    if (-not $resultadosGlobales[$fecha].ContainsKey($ubicacion)) {
-                        $resultadosGlobales[$fecha][$ubicacion] = @{
-                            Suma = 0
-                            Cuenta = 0
-                            Min = $temp
-                            Max = $temp
-                        }
-                    }
-
-                    $stats = $resultadosGlobales[$fecha][$ubicacion]
-                    if ($temp -lt $stats.Min) { 
-                        $stats.Min = $temp 
-                    }
-                    if ($temp -gt $stats.Max) { 
-                        $stats.Max = $temp
-                    }
-                    $stats.Suma += $temp
-                    $stats.Cuenta++
-
-                } catch {
-                    Write-Host "Error procesando registro: $_" -ForegroundColor Yellow
-                }
-            }
-        } catch {
-                    Write-Host "Error procesando registro $($registro.Id): $_" -ForegroundColor Yellow
-        }
-    }
-    return $resultadosGlobales
+    return $archivos
 }
 
 function generarSalida(){
@@ -242,12 +136,124 @@ function generarSalida(){
     }
 }
 
+function validarDatos(){
+    param($datos)
+
+    foreach ($registro in $datos) {
+        # Valido que estén todos los campos
+        if (-not $registro.Id -or -not $registro.Fecha -or -not $registro.Hora -or -not $registro.Ubicacion -or -not $registro.Temperatura) {
+            Write-Host "Error: Registro incompleto en el archivo CSV." -ForegroundColor Red
+            return 1
+        }
+
+        # Valido que el id sea numérico
+        $dummyInt = 0
+        if (-not [int]::TryParse($registro.Id, [ref]$dummyInt)) {
+            Write-Host "Error: Id no válido en el registro: $($registro.Id)" -ForegroundColor Red
+            return 1
+        }
+
+        # Valido que la fecha sea válida
+        $dummyDate = [datetime]::MinValue
+        if (-not [datetime]::TryParse($registro.Fecha, [ref]$dummyDate)) {
+            Write-Host "Error: Fecha no válida en el registro con Id: $($registro.Id)" -ForegroundColor Red
+            return 1
+        }
+
+        # Valido que la hora sea válida
+        $dummyHora = [datetime]::MinValue
+        if (-not [datetime]::TryParseExact($registro.Hora, 'HH:mm:ss', $null, [System.Globalization.DateTimeStyles]::None, [ref]$dummyHora)) {
+            Write-Host "Error: Hora no válida en el registro con Id: $($registro.Id)" -ForegroundColor Red
+            return 1
+        }
+
+        # Valido que la ubicación sea correcta: Norte, Sur, Este u Oeste
+        if ($registro.Ubicacion -notmatch '^(Norte|Sur|Este|Oeste)$') {
+            Write-Host "Error: Ubicación no válida en el registro con Id: $($registro.Id)" -ForegroundColor Red
+            return 1
+        }
+
+        # Valido que la temperatura sea numérica
+        $dummyTemp = 0.0
+        if (-not [double]::TryParse($registro.Temperatura, [ref]$dummyTemp)) {
+            Write-Host "Error: Temperatura no válida en el registro con Id: $($registro.Id)" -ForegroundColor Red
+            return 1
+        }
+    }
+
+    return 0
+}
+
+
+function obtenerValores(){
+    param($archivos)
+    $resultadosGlobales = @{}
+
+    foreach ($arch in $archivos) {
+        Write-Host "`nProcesando archivo: $($arch.FullName)" -ForegroundColor Cyan
+
+        try {
+            # Importar CSV con validación de estructura
+            $datos = Import-Csv -Path $arch.FullName -Header "Id", "Fecha", "Hora", "Ubicacion", "Temperatura" -ErrorAction Stop
+
+            $resultado = 0
+            $resultado = validarDatos -datos $datos
+            #si resultado es distinto de 0 finalizo el script de procesamiento
+            if($resultado -ne 0) {
+                Write-Host "Error: El archivo $($arch.Name) no tiene la estructura correcta" -ForegroundColor Red
+                exit 1
+            }
+
+            # Verificar si se importaron datos correctamente
+            if ($datos.Count -eq 0) {
+                Write-Host "Advertencia: El archivo $($arch.Name) no contiene datos" -ForegroundColor Yellow
+                exit 1
+            }
+            
+            # Procesamos los datos
+            foreach ($registro in $datos){
+                try{
+                    $temp = [double]$registro.Temperatura
+                    $fecha = $registro.Fecha
+                    $ubicacion = $registro.Ubicacion
+
+                    if (-not $resultadosGlobales.ContainsKey($fecha)) {
+                            $resultadosGlobales[$fecha] = @{}
+                    }
+
+                    if (-not $resultadosGlobales[$fecha].ContainsKey($ubicacion)) {
+                        $resultadosGlobales[$fecha][$ubicacion] = @{
+                            Suma = 0
+                            Cuenta = 0
+                            Min = $temp
+                            Max = $temp
+                        }
+                    }
+
+                    $stats = $resultadosGlobales[$fecha][$ubicacion]
+                    $stats.Min = [math]::Min($stats.Min, $temp)
+                    $stats.Max = [math]::Max($stats.Max, $temp)
+                    $stats.Suma += $temp
+                    $stats.Cuenta++
+
+                    # Re-asignar el objeto modificado
+                    $resultadosGlobales[$fecha][$ubicacion] = $stats
+                } catch {
+                    Write-Host "Error procesando registro: $_" -ForegroundColor Yellow
+                }
+            }
+        } catch {
+                    Write-Host "Error procesando registro $($registro.Id): $_" -ForegroundColor Yellow
+        }
+    }
+    # Generar salida
+    generarSalida -resultadosGlobales $resultadosGlobales
+}
+
+
+
 # Validaciones
-validacionParametros
+$archivos = validacionParametros
 
 # Objeto para almacenar todos los resultados
-$resultadosGlobales = @{}
-resultadosGlobales = obtenerValores -resultadosGlobales $resultadosGlobales
-
-# Generar salida
-generarSalida -resultadosGlobales $resultadosGlobales
+obtenerValores -archivos $archivos
