@@ -190,6 +190,8 @@ $matrizC = @()
 $matrizC = validarMatriz -matriz $matrizC
 
 
+Write-Host $Producto
+Write-Host $Trasponer
 #Procesamos la matriz
 if ($Producto -and -not $Trasponer) {
     for($i = 0; $i -lt $matrizC.Count; $i++) {
