@@ -88,15 +88,15 @@ function validacionDeParametros{
 validacionDeParametros
 
 
-#matufia para asegurar que el parametro archivos llego como array porque anda raro
+# Validación para asegurar que el parametro archivos llego como array 
 if ($archivos.Count -eq 1 -and $archivos[0] -like "*,*") {
     $archivos = $archivos[0] -split "," | ForEach-Object { $_.Trim() }
 }
 
-#matufia para concatenar el punto y el * que indica todo lo que esta atras
+#Validación para concatenar el punto y el * que indica todo lo que esta atras
 $ExtensionTypes = $archivos | ForEach-Object { "*." + $_}
 
-#matufia para asegurar que el parametro palabras llego como array porque anda raro
+#Validación para asegurar que el parametro palabras llego como array porque anda raro
 if ($palabras.Count -eq 1 -and $palabras[0] -like "*,*") {
     $palabras = $palabras[0] -split "," | ForEach-Object { $_.Trim() }
 }
