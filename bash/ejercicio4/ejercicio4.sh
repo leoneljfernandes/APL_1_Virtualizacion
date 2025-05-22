@@ -13,17 +13,21 @@ SELF_PATH="$(realpath "$0")"
 
 # Función para mostrar uso
 function mostrar_uso() {
-    echo "  $SCRIPT_NAME "
-    echo "Debe especificar los siguientes argumentos:"
-    echo "  -d, --directorio <directorio>   Ruta del directorio a monitorear."
-    echo "  -s, --salida                    Ruta del directorio en donde se van a crear los backups."   
-    echo "  -k, --kill                      Flag (switch) que se utiliza para indicar que el script debe detener el demonio previamente iniciado.
-                                            Este parámetro solo se puede usar junto con –d o -directorio."
-    echo "  -c, --cantidad                  Cantidad de archivos a ordenar antes de generar un backup."                                        
-    echo "  -h, --help                      Muestra esta ayuda."
+    echo "Bienvenido al script de monitoreo de directorios."
+    echo "El mismo se encargara de reorganizar los archivos sueltos en un directorio espefico en carpetas en base a sus extenciones."
+    echo "Ademas, tras un numero de archivos movidos especificado por el usuario, se generara un backup en forma de zip en un directorio espeficiado"
+    echo "Al ser un proceso DEMONIO, este debe ser detenido utilizando la opcion kill que se le especificara mas adelante (ademas de requerir que se especifique el directorio)"
+    echo "Puede optar por las siguientes opciones:"
+    echo "  -d / --directorio  <Directorio>      Especifica el directorio que sera supervisado."
+    echo "  -s / --salida <Directorio>           Especifica el directorio donde se realizara el backup correspondiente"   
+    echo "  -c / --cantidad <Numero entero>      Cantidad de archivos necesarios para generar un backup"
+    echo "  -k / --kill                          Bandera indicando que un proceso ejercicio4.ps1 debe ser terminado"
+    echo "  -h / --help                          Muestra esta ayuda."
+    echo "Ejemplo:                               ./ejercicio4.ps1 -directorio './Directorio' -salida './Backup' -cantidad 20"
+    echo "Ejemplo:                               ./ejercicio4.ps1 -directorio './Directorio' -kill"
     exit 0
 }
-    
+
 # Función para lanzar el demonio en segundo plano
 function lanzar_demonio() {
     nohup "$SELF_PATH" --daemon "$@" > /dev/null 2>&1 &
