@@ -1,3 +1,10 @@
+#!/bin/pwsh
+# Integrantes del grupo:
+# - Berti Rodrigo
+# - Burnowicz Alejo
+# - Fernandes Leonel
+# - Federico Agustin
+
 <#
 .SYNOPSIS
 Procesamiento de datos meteorológicos.
